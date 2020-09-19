@@ -5,6 +5,7 @@ using UnityEngine;
 public enum GameState
 {
     Menu,
+    Betting,
     Playing,
     Finished
 }
