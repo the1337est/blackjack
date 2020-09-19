@@ -8,8 +8,7 @@ public class Card : MonoBehaviour
     private bool revealed = false;
     private bool animating = false;
 
-    public CardType Type = CardType.Ace;
-    public CardSuit Suit;
+    public CardData Data;
 
     [SerializeField] private SpriteRenderer front;
     [SerializeField] private SpriteRenderer back;
@@ -38,8 +37,7 @@ public class Card : MonoBehaviour
 
     public void Set(CardType type, CardSuit suit)
     {
-        Type = type;
-        Suit = suit;
+        Data = new CardData(type, suit);
     }
 
     public void Flip()
@@ -62,11 +60,24 @@ public class Card : MonoBehaviour
     {
         try
         {
-            front.sprite = GameController.Instance.GetSprite(Suit, Type);
+            front.sprite = GameController.Instance.GetSprite(Data.Suit, Data.Type);
         }
         catch (System.Exception ex)
         {
             Debug.LogError($"Exception occurred: {ex.Message}");
         }
+    }
+}
+
+[System.Serializable]
+public struct CardData
+{
+    public CardType Type;
+    public CardSuit Suit;
+
+    public CardData(CardType type, CardSuit suit)
+    {
+        Type = type;
+        Suit = suit;
     }
 }
