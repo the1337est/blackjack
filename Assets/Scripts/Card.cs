@@ -23,8 +23,7 @@ public class Card : MonoBehaviour
 
     private void Awake()
     {
-        front.enabled = revealed;
-        back.enabled = !revealed;
+        RefreshVisibility();
     }
 
     private void OnMouseDown()
@@ -35,18 +34,36 @@ public class Card : MonoBehaviour
         }
     }
 
-    public void Set(CardType type, CardSuit suit)
+    /// <summary>
+    /// Sets cards data and graphics
+    /// </summary>
+    /// <param name="type"></param>
+    /// <param name="suit"></param>
+    public void Set(CardData data)
     {
-        Data = new CardData(type, suit);
+        Data = data;
+        Refresh();
     }
 
+    public void SetOrder(int order)
+    {
+        front.sortingOrder = order;
+        back.sortingOrder = order;
+    }
+
+    /// <summary>
+    /// Flips the card over revealing the underside
+    /// </summary>
     public void Flip()
     {
         animating = true;
+        LeanTween.scale(gameObject, Vector3.one * 1.2f, 0.15f).setEaseOutSine().setOnComplete(() => 
+        {
+            LeanTween.scale(gameObject, Vector3.one, 0.15f).setEaseOutBack();
+        });
         LeanTween.rotateY(gameObject, 90f, 0.15f).setEaseOutSine().setOnComplete(() =>
         {
-            front.enabled = !revealed;
-            back.enabled = revealed;
+            RefreshVisibility();
             LeanTween.rotateY(gameObject, 0f, 0.15f).setEaseOutBack().setOnComplete(() =>
             {
                 revealed = !revealed;
@@ -55,17 +72,47 @@ public class Card : MonoBehaviour
         });
     }
 
+    /// <summary>
+    /// Animates / "deals" the cards to a position
+    /// </summary>
+    /// <param name="startPosition"></param>
+    /// <param name="endPosition"></param>
+    public void Deal(Vector3 position, bool reveal = false)
+    {
+        Vector3 currentPosition = transform.position;
+        float time = Vector3.Distance(currentPosition, position) / GameController.Instance.CardSpeed;
+        LeanTween.move(gameObject, position, time).setEaseOutBack().setOnComplete(()=> 
+        {
+            if (reveal)
+            {
+                Flip();
+            }
+        });
+    }
 
+    /// <summary>
+    /// Refreshes Card sprite and visible side
+    /// </summary>
     private void Refresh()
     {
         try
         {
             front.sprite = GameController.Instance.GetSprite(Data.Suit, Data.Type);
+            RefreshVisibility();
         }
         catch (System.Exception ex)
         {
             Debug.LogError($"Exception occurred: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Refreshes Card visibility
+    /// </summary>
+    private void RefreshVisibility()
+    {
+        front.enabled = !revealed;
+        back.enabled = revealed;
     }
 }
 
