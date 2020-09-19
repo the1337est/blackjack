@@ -63,10 +63,10 @@ public class Card : MonoBehaviour
         });
         LeanTween.rotateY(gameObject, 90f, 0.15f).setEaseOutSine().setOnComplete(() =>
         {
+            revealed = !revealed;
             RefreshVisibility();
             LeanTween.rotateY(gameObject, 0f, 0.15f).setEaseOutBack().setOnComplete(() =>
             {
-                revealed = !revealed;
                 animating = false;
             });
         });
@@ -77,12 +77,13 @@ public class Card : MonoBehaviour
     /// </summary>
     /// <param name="startPosition"></param>
     /// <param name="endPosition"></param>
-    public void Deal(Vector3 position, bool reveal = false)
+    public void Deal(Vector3 position, bool reveal = false, System.Action complete = null)
     {
         Vector3 currentPosition = transform.position;
         float time = Vector3.Distance(currentPosition, position) / GameController.Instance.CardSpeed;
-        LeanTween.move(gameObject, position, time).setEaseOutBack().setOnComplete(()=> 
+        LeanTween.move(gameObject, position, time).setEaseInOutQuad().setOnComplete(()=> 
         {
+            complete?.Invoke();
             if (reveal)
             {
                 Flip();
@@ -111,8 +112,8 @@ public class Card : MonoBehaviour
     /// </summary>
     private void RefreshVisibility()
     {
-        front.enabled = !revealed;
-        back.enabled = revealed;
+        front.enabled = revealed;
+        back.enabled = !revealed;
     }
 }
 

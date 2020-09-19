@@ -6,6 +6,6 @@ public class Player : Participant
 {
     private void Awake()
     {
-        isPlayer = true;
-    }
+        IsPlayer = true;
+    }  
 }
