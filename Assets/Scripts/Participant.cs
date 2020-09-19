@@ -21,7 +21,7 @@ public class Participant : MonoBehaviour
         }
         Cards.Add(card);
         card.SetOrder(Cards.Count);
-        bool reveal = IsPlayer || (!IsPlayer && Cards.Count == 1);
+        bool reveal = IsPlayer || (!IsPlayer && Cards.Count != 2);
         card.Deal(GetNextPosition(), reveal, ()=> 
         {
             //todo: block input when card is animating
@@ -67,7 +67,7 @@ public class Participant : MonoBehaviour
                 {
                     if (Score < 17)
                     {
-                        GameController.Instance.Hit(this);
+                        GameController.Instance.Hit(this, 1f);
                     }
                     else
                     {
@@ -76,7 +76,7 @@ public class Participant : MonoBehaviour
                 }
             }
         }
-        if (Score == 21)
+        else if (Score == 21)
         {
             if (IsPlayer)
             {
@@ -87,6 +87,22 @@ public class Participant : MonoBehaviour
                 GameController.Instance.PlayerLost();
             }
         }
+    }
+
+    public void Reset()
+    {
+        Score = 0;
+        Count.text = "";
+        if (Cards != null)
+        {
+            for (int index = Cards.Count - 1; index >= 0; index--)
+            {
+                Destroy(Cards[index].gameObject);
+            }
+            Cards = new List<Card>();
+        }
+        
+        Container.position = new Vector3(0f, Container.position.y, 0f);
     }
 
     private Vector3 GetNextPosition()

@@ -162,7 +162,12 @@ public class GameController : MonoBehaviour
         return result;
     }
 
-    public void Hit(Participant participant)
+    public void PlayerHit()
+    {
+        Hit(Player);
+    }
+
+    public void Hit(Participant participant, float delay = 0f)
     {
         if (State == GameState.Playing)
         {
@@ -171,10 +176,17 @@ public class GameController : MonoBehaviour
             if (allow)
             {
                 AllowInput = false;
-                Deal(participant);
+                StartCoroutine(DealWithDelay(participant, delay));
             }
         }
     }
+
+    private IEnumerator DealWithDelay(Participant participant, float delay = 0f)
+    {
+        yield return new WaitForSeconds(delay);
+        Deal(participant);
+    }
+
 
     public void Stand(Participant participant)
     {
@@ -197,7 +209,7 @@ public class GameController : MonoBehaviour
         Money += bet;
         ResultText.color = WinColor;
         RefreshMoneyText();
-        ShowResult("You won $" + bet.ToString("N0"), 2f);
+        StartCoroutine(ShowResult("You won $" + bet.ToString("N0"), 3f));
     }
 
 
@@ -207,14 +219,14 @@ public class GameController : MonoBehaviour
         Money -= bet;
         RefreshMoneyText();
         ResultText.color = LoseColor;
-        StartCoroutine(ShowResult("You lost $" + bet.ToString("N0"), 2f));
+        StartCoroutine(ShowResult("You lost $" + bet.ToString("N0"), 3f));
     }
 
     public void PlayerTie()
     {
         State = GameState.Finished;
         ResultText.color = TieColor;
-        StartCoroutine(ShowResult("You tied with the dealer!", 2f));
+        StartCoroutine(ShowResult("You tied with the dealer!", 3f));
     }
 
     private void RefreshMoneyText()
@@ -230,6 +242,7 @@ public class GameController : MonoBehaviour
         ResultText.gameObject.SetActive(false);
 
         //todo: reset game
+        ResetGame();
 
         AllowInput = false;
         bettingUI.SetActive(true);
@@ -238,23 +251,35 @@ public class GameController : MonoBehaviour
 
     private void ResetGame()
     {
-        //todo: write reset logic
+        if (CardDeck != null)
+        {
+            CardDeck.ResetDeck();
+        }
+        Player.Reset();
+        Dealer.Reset();
     }
 
     public void EndPlayerTurn()
     {
         AllowInput = false;
-        //todo: make dealer play
+        PlayerStood = true;
         Dealer.BeginTurn();
-
     }
 
     public void EndDealerTurn()
     {
-        //todo: check who won
+        //don't have to check for Score > 21 here because Participant class handles it already
         if (Player.Score > Dealer.Score)
         {
             PlayerWon();
+        }
+        else if (Player.Score == Dealer.Score)
+        {
+            PlayerTie();
+        }
+        else
+        {
+            PlayerLost();
         }
     }
 }
