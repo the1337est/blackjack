@@ -247,20 +247,21 @@ public class GameController : MonoBehaviour
         State = GameState.Finished;
         Money -= bet;
         Stats.HandLost(bet);
-        if (Money < bet && bet >= Settings.Data.MinBet)
-        {
-            bet = Money;
-            RefreshBetText();
-        }
         RefreshMoneyText();
         if (Money < Settings.Data.MinBet)
         {
-            GameOver();
+            ResultText.color = LoseColor;
+            StartCoroutine(ShowResult("You lost $" + bet.ToString("N0"), 3f, true));
         }
         else
         {
             ResultText.color = LoseColor;
             StartCoroutine(ShowResult("You lost $" + bet.ToString("N0"), 3f));
+        }
+        if (Money < bet && bet >= Settings.Data.MinBet)
+        {
+            bet = Money;
+            RefreshBetText();
         }
     }
 
@@ -277,20 +278,25 @@ public class GameController : MonoBehaviour
         moneyText.text = string.Format("${0}", Money.ToString("N0"));
     }
 
-    private IEnumerator ShowResult(string text, float time)
+    private IEnumerator ShowResult(string text, float time, bool gameover = false)
     {
         SaveGame();
         ResultText.gameObject.SetActive(true);
         ResultText.text = text;
         yield return new WaitForSeconds(time);
         ResultText.gameObject.SetActive(false);
+        if (gameover)
+        {
+            GameOver();
+        }
+        else
+        {
+            ResetGame();
 
-        //todo: reset game
-        ResetGame();
-
-        AllowInput = false;
-        bettingUI.SetActive(true);
-        gameplayUI.SetActive(false);
+            AllowInput = false;
+            bettingUI.SetActive(true);
+            gameplayUI.SetActive(false);
+        }
     }
 
     public void ResetGame(bool gameover = false)

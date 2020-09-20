@@ -82,6 +82,12 @@ public class GameSettings : MonoBehaviour
         deckCountText.text = value.ToString("N0");
         Data.DeckCount = value;
     }
+
+    public void Submit()
+    {
+        Data.StartingMoney = (int)startingMoneySlider.value * moneyFactor;
+        GameController.Instance.StartGame();
+    }
 }
 
 [System.Serializable]
