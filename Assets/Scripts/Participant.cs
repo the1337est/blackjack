@@ -24,7 +24,6 @@ public class Participant : MonoBehaviour
         bool reveal = IsPlayer || (!IsPlayer && Cards.Count != 2);
         card.Deal(GetNextPosition(), reveal, ()=> 
         {
-            //todo: block input when card is animating
             if (reveal)
             {
                 Check();
@@ -59,7 +58,11 @@ public class Participant : MonoBehaviour
         {
             if (IsPlayer)
             {
-                GameController.Instance.AllowInput = true;
+                //only allow input if it's not the initial deal animation
+                if (!GameController.Instance.DealingInitial)
+                {
+                    GameController.Instance.AllowInput = true;
+                }
             }
             else
             {

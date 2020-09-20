@@ -54,7 +54,7 @@ public class Card : MonoBehaviour
     /// <summary>
     /// Flips the card over revealing the underside
     /// </summary>
-    public void Flip()
+    public void Flip(System.Action complete = null)
     {
         animating = true;
         LeanTween.scale(gameObject, Vector3.one * 1.2f, 0.15f).setEaseOutSine().setOnComplete(() => 
@@ -67,6 +67,7 @@ public class Card : MonoBehaviour
             RefreshVisibility();
             LeanTween.rotateY(gameObject, 0f, 0.15f).setEaseOutBack().setOnComplete(() =>
             {
+                complete?.Invoke();
                 animating = false;
             });
         });
@@ -83,10 +84,9 @@ public class Card : MonoBehaviour
         float time = Vector3.Distance(currentPosition, position) / GameController.Instance.CardSpeed;
         LeanTween.move(gameObject, position, time).setEaseInOutQuad().setOnComplete(()=> 
         {
-            complete?.Invoke();
             if (reveal)
             {
-                Flip();
+                Flip(complete);
             }
         });
     }

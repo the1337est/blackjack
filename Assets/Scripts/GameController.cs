@@ -14,6 +14,7 @@ public class GameController : MonoBehaviour
 
     public GameState State = GameState.Menu;
     public bool AllowInput;
+    public bool DealingInitial = true;
     public bool PlayerStood = false;
 
     [Header("Gameplay")]
@@ -22,10 +23,14 @@ public class GameController : MonoBehaviour
     public Transform DeckTransform;
     public float CardSpeed = 3f;
 
+
+
+    public GameSettings Settings;
+
     public int Money = 0;
-    public int StartingMoney = 100;
-    public int MinBet = 10;
-    public int MaxBet = 1000;
+    //public int StartingMoney = 100;
+    //public int MinBet = 10;
+    //public int MaxBet = 1000;
 
     [Header("References")]
 
@@ -42,6 +47,13 @@ public class GameController : MonoBehaviour
 
     [SerializeField] private GameObject bettingUI;
     [SerializeField] private GameObject gameplayUI;
+    [SerializeField] private GameObject gameoverUI;
+
+    [SerializeField] private Button continueButton;
+    [SerializeField] private Text continueText;
+
+    [SerializeField] private Color enabledColor;
+    [SerializeField] private Color disabledColor;
 
     private int bet = 0;
 
@@ -55,33 +67,47 @@ public class GameController : MonoBehaviour
         {
             DestroyImmediate(this);
         }
-       
+
+        ToggleContinue(PlayerPrefs.HasKey("SavedGame"));
+
         AllowInput = false;
     }
 
     private void Update()
     {
-
+        if (Input.GetKeyDown(KeyCode.S))
+        {
+            SaveGame();
+        }
     }
 
     public void StartGame()
     {
-        //todo: check if it's continue
 
         GenerateDeck();
         State = GameState.Betting;
-        bet = MinBet;
+        bet = Settings.Data.MinBet;
         RefreshBetText();
-        Money = StartingMoney;
+        Money = Settings.Data.StartingMoney;
         RefreshMoneyText();
         bettingUI.SetActive(true);
         gameplayUI.SetActive(false);
     }
 
+    public void ContinueGame()
+    {
+        if (PlayerPrefs.HasKey("SavedGame"))
+        {
+            Settings.Data = JsonUtility.FromJson<SettingsData>(PlayerPrefs.GetString("SavedGame"));
+            StartGame();
+        }
+    }
+
     private void GenerateDeck()
     {
         CardDeck = new Deck();
-        CardDeck.CreateDeck(DeckCount);
+        Debug.Log("Deck count: " + Settings.Data.DeckCount);
+        CardDeck.CreateDeck(Settings.Data.DeckCount);
     }
 
     public void Bet()
@@ -96,7 +122,7 @@ public class GameController : MonoBehaviour
     {
         int increment = bet < 100 ? 10 : bet < 200 ? 20 : 50;
         int targetBet = bet + increment;
-        int max = Math.Min(MaxBet, Money);
+        int max = Math.Min(Settings.Data.MaxBet, Money);
         if (targetBet <= max)
         {
             bet += increment;
@@ -111,13 +137,13 @@ public class GameController : MonoBehaviour
     public void DecreaseBet()
     {
         int decrement = bet < 100 ? 10 : bet < 200 ? 20 : 50;
-        if (bet - decrement >= MinBet)
+        if (bet - decrement >= Settings.Data.MinBet)
         {
             bet -= decrement;
         }
         else
         {
-            bet = MinBet;
+            bet = Settings.Data.MinBet;
         }
         RefreshBetText();
     }
@@ -138,6 +164,7 @@ public class GameController : MonoBehaviour
         yield return new WaitForSeconds(0.75f);
         Deal(Dealer);
         yield return new WaitForSeconds(0.75f);
+        DealingInitial = false;
         AllowInput = true;
     }
 
@@ -187,7 +214,6 @@ public class GameController : MonoBehaviour
         Deal(participant);
     }
 
-
     public void Stand(Participant participant)
     {
         if (State == GameState.Playing)
@@ -217,9 +243,21 @@ public class GameController : MonoBehaviour
     {
         State = GameState.Finished;
         Money -= bet;
+        if (Money < bet && bet >= Settings.Data.MinBet)
+        {
+            bet = Money;
+            RefreshBetText();
+        }
         RefreshMoneyText();
-        ResultText.color = LoseColor;
-        StartCoroutine(ShowResult("You lost $" + bet.ToString("N0"), 3f));
+        if (Money < Settings.Data.MinBet)
+        {
+            GameOver();
+        }
+        else
+        {
+            ResultText.color = LoseColor;
+            StartCoroutine(ShowResult("You lost $" + bet.ToString("N0"), 3f));
+        }
     }
 
     public void PlayerTie()
@@ -236,6 +274,7 @@ public class GameController : MonoBehaviour
 
     private IEnumerator ShowResult(string text, float time)
     {
+        SaveGame();
         ResultText.gameObject.SetActive(true);
         ResultText.text = text;
         yield return new WaitForSeconds(time);
@@ -246,10 +285,10 @@ public class GameController : MonoBehaviour
 
         AllowInput = false;
         bettingUI.SetActive(true);
-        gameplayUI.SetActive(false);        
+        gameplayUI.SetActive(false);
     }
 
-    private void ResetGame()
+    private void ResetGame(bool gameover = false)
     {
         if (CardDeck != null)
         {
@@ -257,6 +296,9 @@ public class GameController : MonoBehaviour
         }
         Player.Reset();
         Dealer.Reset();
+        PlayerStood = false;
+
+        State = gameover ? GameState.Finished : GameState.Betting;
     }
 
     public void EndPlayerTurn()
@@ -281,5 +323,28 @@ public class GameController : MonoBehaviour
         {
             PlayerLost();
         }
+    }
+
+    public void SaveGame()
+    {
+        Settings.Data.StartingMoney = Money;
+        string json = JsonUtility.ToJson(Settings.Data);
+        Debug.Log("Saving: " + json);
+        PlayerPrefs.SetString("SavedGame", json);
+        ToggleContinue(true);
+    }
+
+    public void GameOver()
+    {
+        ResetGame(gameover:true);
+        PlayerPrefs.DeleteAll();
+        gameoverUI.SetActive(true);
+        ToggleContinue(false);
+    }
+
+    private void ToggleContinue(bool enabled)
+    {
+        continueButton.interactable = enabled;
+        continueText.color = enabled ? enabledColor : disabledColor; 
     }
 }
