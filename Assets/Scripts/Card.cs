@@ -28,10 +28,10 @@ public class Card : MonoBehaviour
 
     private void OnMouseDown()
     {
-        if (!animating)
-        {
-            Flip();
-        }
+        //if (!animating)
+        //{
+        //    Flip();
+        //}
     }
 
     /// <summary>
