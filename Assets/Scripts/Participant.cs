@@ -83,6 +83,7 @@ public class Participant : MonoBehaviour
         {
             if (IsPlayer)
             {
+                GameController.Instance.Stats.OnBlackjack();
                 GameController.Instance.PlayerWon();
             }
             else

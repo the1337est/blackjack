@@ -26,6 +26,7 @@ public class GameController : MonoBehaviour
 
 
     public GameSettings Settings;
+    public GameStats Stats;
 
     public int Money = 0;
     //public int StartingMoney = 100;
@@ -56,6 +57,7 @@ public class GameController : MonoBehaviour
     [SerializeField] private Color disabledColor;
 
     private int bet = 0;
+    private const string saveKey = "SavedGame";
 
     void Awake()
     {
@@ -68,8 +70,8 @@ public class GameController : MonoBehaviour
             DestroyImmediate(this);
         }
 
-        ToggleContinue(PlayerPrefs.HasKey("SavedGame"));
-
+        ToggleContinue(PlayerPrefs.HasKey(saveKey));
+        Stats.LoadStats();
         AllowInput = false;
     }
 
@@ -96,9 +98,9 @@ public class GameController : MonoBehaviour
 
     public void ContinueGame()
     {
-        if (PlayerPrefs.HasKey("SavedGame"))
+        if (PlayerPrefs.HasKey(saveKey))
         {
-            Settings.Data = JsonUtility.FromJson<SettingsData>(PlayerPrefs.GetString("SavedGame"));
+            Settings.Data = JsonUtility.FromJson<SettingsData>(PlayerPrefs.GetString(saveKey));
             StartGame();
         }
     }
@@ -235,6 +237,7 @@ public class GameController : MonoBehaviour
         Money += bet;
         ResultText.color = WinColor;
         RefreshMoneyText();
+        Stats.HandWon(bet);
         StartCoroutine(ShowResult("You won $" + bet.ToString("N0"), 3f));
     }
 
@@ -243,6 +246,7 @@ public class GameController : MonoBehaviour
     {
         State = GameState.Finished;
         Money -= bet;
+        Stats.HandLost(bet);
         if (Money < bet && bet >= Settings.Data.MinBet)
         {
             bet = Money;
@@ -263,6 +267,7 @@ public class GameController : MonoBehaviour
     public void PlayerTie()
     {
         State = GameState.Finished;
+        Stats.HandTied();
         ResultText.color = TieColor;
         StartCoroutine(ShowResult("You tied with the dealer!", 3f));
     }
@@ -288,7 +293,7 @@ public class GameController : MonoBehaviour
         gameplayUI.SetActive(false);
     }
 
-    private void ResetGame(bool gameover = false)
+    public void ResetGame(bool gameover = false)
     {
         if (CardDeck != null)
         {
@@ -330,14 +335,14 @@ public class GameController : MonoBehaviour
         Settings.Data.StartingMoney = Money;
         string json = JsonUtility.ToJson(Settings.Data);
         Debug.Log("Saving: " + json);
-        PlayerPrefs.SetString("SavedGame", json);
+        PlayerPrefs.SetString(saveKey, json);
         ToggleContinue(true);
     }
 
     public void GameOver()
     {
         ResetGame(gameover:true);
-        PlayerPrefs.DeleteAll();
+        PlayerPrefs.DeleteKey(saveKey);
         gameoverUI.SetActive(true);
         ToggleContinue(false);
     }
