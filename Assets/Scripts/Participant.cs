@@ -35,12 +35,28 @@ public class Participant : MonoBehaviour
     public void Check()
     {
         int score = 0;
+        int aceCount = 0;
         for (int i = 0; i < Cards.Count; i++)
         {
             int val = Mathf.Clamp((int)Cards[i].Data.Type, 1, 10);
+            if (val == 1)
+            {
+                aceCount++;
+            }
             score += val;
-            Count.text = score.ToString();
         }
+        while(aceCount > 0)
+        {
+            if (score <= 11)
+            {
+                score += 10;
+            }
+            aceCount--;
+        }
+        Count.text = score.ToString();
+        //ace adjustment
+
+
         Score = score;
         //todo: modify logic to allow for Ace being 1 or 10.
         if (Score > 21)
